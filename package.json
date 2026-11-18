@@ -1,0 +1,1 @@
+{"description":"A GitHub-compatible git forge in Node 22 (standard library only): pre-compiled route trie, object arena with pack cache, git smart HTTP, REST v3, GraphQL and MCP","engines":{"node":">=22.18"},"license":"MIT","name":"github-core-clone-01-v2","private":true,"scripts":{"start":"node --experimental-strip-types main.ts"},"type":"module","version":"1.0.0"}
