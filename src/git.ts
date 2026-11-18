@@ -13,7 +13,7 @@ import {
   readPack,
   type GitObject,
 } from './objects.ts';
-import { sendBytes, sendErr, sendJson, type Ctx } from './http.ts';
+import { sendBytes, sendErr, type Ctx } from './http.ts';
 import type { Repo } from './store.ts';
 
 const AGENT = 'forge-v2/1.0.0';
@@ -47,7 +47,7 @@ function lookupGitRepo(ctx: Ctx): Repo | null {
   if (name.endsWith('.git')) name = name.slice(0, -4);
   const repo = ctx.store.getRepo(owner, name);
   if (!repo) {
-    sendJson(ctx, 404, { message: 'Not Found' });
+    sendErr(ctx, 404, 'Not Found');
     return null;
   }
   return repo;
@@ -83,7 +83,7 @@ export function infoRefs(ctx: Ctx): void {
   }
   const service = ctx.query.get('service') ?? '';
   if (service !== 'git-upload-pack' && service !== 'git-receive-pack') {
-    sendJson(ctx, 404, { message: 'Not Found' });
+    sendErr(ctx, 404, 'Not Found');
     return;
   }
   const repo = lookupGitRepo(ctx);

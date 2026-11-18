@@ -441,13 +441,16 @@ export function listCommits(ctx: Ctx): void {
       const lt = ident.lastIndexOf('<');
       const name = lt > 0 ? ident.slice(0, lt).trim() : ident;
       const email = lt > 0 ? ident.slice(lt + 1, ident.length - 1) : '';
+      // GitHub's API returns the message without the trailing newline the
+      // commit object itself carries.
+      const message = view.message.endsWith('\n') ? view.message.slice(0, -1) : view.message;
       out.push({
         sha: oid,
         node_id: Buffer.from(`Commit:${oid}`).toString('base64'),
         commit: {
           author: { name, email, date },
           committer: { name, email, date },
-          message: view.message,
+          message,
           tree: { sha: view.tree },
           url: `/api/v3/repos/${repo.owner}/${repo.name}/git/commits/${oid}`,
           comment_count: 0,
@@ -630,7 +633,8 @@ export function putContents(ctx: Ctx): void {
     return;
   }
   const data = Buffer.from(contentB64, 'base64');
-  const branch = str(body.branch, repo.defaultBranch);
+  // The branch may ride in the JSON body or in the ?branch= query string.
+  const branch = str(body.branch, '') || ctx.query.get('branch') || repo.defaultBranch;
   const ref = `refs/heads/${branch}`;
   const tip = repo.refs.get(ref);
   let currentSha: string | null = null;
@@ -689,7 +693,7 @@ export function deleteContents(ctx: Ctx): void {
   }
   const path = contentsPath(ctx);
   const message = str(body.message, 'Delete file');
-  const branch = str(body.branch, repo.defaultBranch);
+  const branch = str(body.branch, '') || ctx.query.get('branch') || repo.defaultBranch;
   const tip = repo.refs.get(`refs/heads/${branch}`);
   if (!tip) {
     sendErr(ctx, 404, 'Not Found');

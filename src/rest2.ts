@@ -1,7 +1,7 @@
 // REST v3, second half: issues, issue comments and pull requests.
 
 import { parseCommit } from './objects.ts';
-import { sendErr, sendObj, type Ctx } from './http.ts';
+import { sendErr, sendJson, sendObj, type Ctx } from './http.ts';
 import { issueJson, pullJson } from './rest.ts';
 import type { ChangedFile, Issue, Pull, Repo } from './store.ts';
 
@@ -102,7 +102,8 @@ export function createIssue(ctx: Ctx): void {
   repo.nextNumber += 1;
   repo.issues.set(issue.number, issue);
   repo.jsonCache = null;
-  sendObj(ctx, 201, JSON.parse(issueJson(ctx, repo, issue)) as Record<string, unknown>);
+  // The cached JSON string goes out as-is: no parse + re-stringify per write.
+  sendJson(ctx, 201, issueJson(ctx, repo, issue));
 }
 
 export function listIssues(ctx: Ctx): void {
@@ -121,7 +122,7 @@ export function listIssues(ctx: Ctx): void {
   }
   const start = (page - 1) * perPage;
   const slice = items.slice(start, start + perPage);
-  sendObj(ctx, 200, slice.map((issue) => JSON.parse(issueJson(ctx, repo, issue)) as Record<string, unknown>));
+  sendJson(ctx, 200, `[${slice.map((issue) => issueJson(ctx, repo, issue)).join(',')}]`);
 }
 
 export function getIssue(ctx: Ctx): void {
@@ -134,7 +135,8 @@ export function getIssue(ctx: Ctx): void {
     sendErr(ctx, 404, 'Not Found');
     return;
   }
-  sendObj(ctx, 200, JSON.parse(issueJson(ctx, repo, issue)) as Record<string, unknown>);
+  // The hot read path: the cached JSON string goes out as-is.
+  sendJson(ctx, 200, issueJson(ctx, repo, issue));
 }
 
 export function patchIssue(ctx: Ctx): void {
